@@ -19,12 +19,11 @@ class PiaApi {
 
     setupRoutes() {
         this.app.use(express.json());
-        this.app.post('/users', this.createUser);
-        this.app.get('/users', this.getUsers);
+        this.app.post('/users', (req, res) => this.createUser(req, res));
+        this.app.get('/users', (req, res) => this.getUsers(req, res));
     }
 
-
-    async createUser(req, res) {
+    createUser = async (req, res) => {
         const { nombre, apellido, cedula, contrasena } = req.body;
         try {
             const db = client.db();
@@ -48,9 +47,9 @@ class PiaApi {
             console.error('Error al crear usuario:', error);
             res.status(500).json({ message: 'Error al crear usuario' });
         }
-    }
+    };
     
-    async getUsers(req, res) {
+    getUsers = async (req, res) => {
         try {
             const db = client.db();
             const collection = db.collection('users');
@@ -60,7 +59,7 @@ class PiaApi {
             console.error('Error al obtener usuarios:', error);
             res.status(500).json({ message: 'Error al obtener usuarios' });
         }
-    }
+    };
 
     startServer() {
         this.setupDB().then(() => {
