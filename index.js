@@ -1,50 +1,72 @@
 const express = require('express');
-const axios = require('axios');
+const { connectDB, client } = require('./config');
 
-class CountryAPI {
-  constructor() {
-    this.app = express();
-    this.port = 3010;
-    this.baseUrl = 'https://restcountries.com/v3.1/';
-    this.setupRoutes();
-  }
-
-  setupRoutes() {
-    this.app.use(express.json());
-    this.app.get('/:country', this.getCountryData.bind(this));
-    this.app.post('/', this.getCountryData.bind(this));
-  }
-
-  async getCountryData(req, res) {
-    const { country } = req.params || req.body;
-    const cleanCountry = country.toLowerCase();
-    let mainDataCountry = `No hay datos para ${country}`;
-    try {
-      const { data } = await axios.get(`${this.baseUrl}name/${cleanCountry}`);
-      const countryData = data[0];
-      if (countryData) {
-        mainDataCountry = {
-          busqueda: country,
-          nombre: countryData.name?.common,
-          nombreOficial: countryData.name?.official,
-          moneda: Object.values(countryData.currencies)[0]?.name,
-          capital: countryData.capital[0],
-          poblacion: countryData.population,
-          idioma: Object.values(countryData.languages).toString(),
-        };
-      }
-    } catch (error) {
-      console.error('Error al realizar la solicitud:', error);
+class PiaApi {
+    constructor() {
+        this.app = express();
+        this.port = 3010;
+        this.setupRoutes();
     }
-    res.json(mainDataCountry);
-  }
 
-  startServer() {
-    this.app.listen(this.port, () => {
-      console.log(`Server is running on port http://localhost:${this.port}`);
-    });
-  }
+    setupDB = async () => {
+        await connectDB();
+    }
+
+    setupRoutes = () => {
+        this.app.use(express.json());
+        this.app.post('/users', this.createUser);
+        this.app.get('/users', this.getUsers);
+    }
+
+    createUser = async (req, res) => {
+        const {
+            name,
+            lastname,
+            email,
+            password,
+            passwordConfirm,
+            identificate
+        } = req.body;
+        try {
+            const db = client.db();
+            const collection = db.collection('users');
+            const result = await collection.insertOne({
+                name,
+                lastname,
+                email,
+                password,
+                passwordConfirm,
+                identificate,
+            });
+            const newUser = result.ops[0];
+            res.json({ message: 'Usuario creado exitosamente', data: newUser });
+        } catch (error) {
+            console.error('Error al crear usuario:', error);
+            res.status(500).json({ message: 'Error al crear usuario' });
+        }
+    }
+
+    getUsers = async (req, res) => {
+        try {
+            const db = client.db();
+            const collection = db.collection('users');
+
+            const users = await collection.find({}).toArray();
+            res.json({ users });
+        } catch (error) {
+            console.error('Error al obtener usuarios:', error);
+            res.status(500).json({ message: 'Error al obtener usuarios' });
+        }
+    }
+
+    startServer = () => {
+        this.setupDB().then(() => {
+            this.app.listen(this.port, () => {
+                console.log(`Server is running on port http://localhost:${this.port}`);
+            });
+        });
+    }
 }
 
-const countryAPI = new CountryAPI();
-countryAPI.startServer()
+const PiaApiInstance = new PiaApi();
+PiaApiInstance.startServer();
