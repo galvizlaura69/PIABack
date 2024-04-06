@@ -1,5 +1,7 @@
 const express = require('express');
-const { connectDB, client, ObjectId } = require('./config'); 
+const cors = require('cors'); // Importar el paquete CORS
+
+const { connectDB, client} = require('./config'); 
 class PiaApi {
     constructor() {
         this.app = express();
@@ -18,6 +20,12 @@ class PiaApi {
 
     setupRoutes() {
         this.app.use(express.json());
+        this.app.use(cors({
+            origin: 'http://localhost:3000',
+            methods: ['GET', 'POST', 'PUT'],
+            allowedHeaders: ['Content-Type', 'Authorization'],
+          }));
+
         this.app.post('/users', (req, res) => this.createUser(req, res));
         this.app.get('/users', (req, res) => this.getUsers(req, res));
         this.app.get('/users/:id', (req, res) => this.getUserById(req, res));
@@ -26,19 +34,19 @@ class PiaApi {
     }
 
     createUser = async (req, res) => {
-        const { nombre, apellido, cedula, contrasena } = req.body;
+        const { name, email, password } = req.body;
         try {
             const db = client.db();
             const collection = db.collection('users');
             const result = await collection.insertOne({
-                nombre, apellido, cedula, contrasena
+                name, email, password
             });
             if (result && result.insertedId) {
                 const newUser = {
                     _id: result.insertedId,
-                    nombre,
-                    apellido,
-                    cedula
+                    name,
+                    email,
+                    password
                 };
                 res.json({ message: 'Usuario creado exitosamente', user: newUser });
             } else {
@@ -63,7 +71,7 @@ class PiaApi {
         }
     };
 
-/*     getUserById = async (req, res) => {
+     getUserById = async (req, res) => {
         const userId = req.params.id;
         try {
             const db = client.db();
@@ -99,13 +107,13 @@ class PiaApi {
 
     updateUserById = async (req, res) => {
         const userId = req.params.id;
-        const { nombre, apellido, cedula, contrasena } = req.body;
+        const { name, email, password } = req.body;
         try {
             const db = client.db();
             const collection = db.collection('users');
             const result = await collection.updateOne(
-                { _id: ObjectId(userId) },
-                { $set: { nombre, apellido, cedula, contrasena } }
+                { _id: userId },
+                { $set: { name, email, password } }
             );
             if (result.modifiedCount === 1) {
                 res.json({ message: 'Usuario actualizado exitosamente' });
@@ -116,7 +124,7 @@ class PiaApi {
             console.error('Error al actualizar usuario por ID:', error);
             res.status(500).json({ message: 'Error al actualizar usuario por ID' });
         }
-    }; */
+    }; 
 
     startServer() {
         this.setupDB().then(() => {
