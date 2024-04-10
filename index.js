@@ -1,6 +1,6 @@
 const express = require('express');
-const cors = require('cors'); // Importar el paquete CORS
-
+const cors = require('cors'); 
+const { ObjectId } = require('mongodb'); 
 const { connectDB, client} = require('./config'); 
 class PiaApi {
     constructor() {
@@ -22,15 +22,15 @@ class PiaApi {
         this.app.use(express.json());
         this.app.use(cors({
             origin: 'http://localhost:3000',
-            methods: ['GET', 'POST', 'PUT'],
+            methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
           }));
-
-        this.app.post('/users', (req, res) => this.createUser(req, res));
         this.app.get('/users', (req, res) => this.getUsers(req, res));
         this.app.get('/users/:id', (req, res) => this.getUserById(req, res));
-        this.app.delete('/users/:id', (req, res) => this.deleteUserById(req, res));
+        this.app.post('/users', (req, res) => this.createUser(req, res));
         this.app.put('/users/:id', (req, res) => this.updateUserById(req, res));
+        this.app.delete('/users/:id', (req, res) => this.deleteUserById(req, res));
+        this.app.get('/sensorData', (req, res) => this.getSensorData(req, res));
     }
 
     createUser = async (req, res) => {
@@ -73,10 +73,12 @@ class PiaApi {
 
      getUserById = async (req, res) => {
         const userId = req.params.id;
+        const userObjectId = new ObjectId(userId);
+
         try {
             const db = client.db();
             const collection = db.collection('users');
-            const user = await collection.findOne({ _id: ObjectId(userId) });
+            const user = await collection.findOne({ _id: userObjectId });
             if (!user) {
                 res.status(404).json({ message: 'Usuario no encontrado' });
             } else {
@@ -93,7 +95,9 @@ class PiaApi {
         try {
             const db = client.db();
             const collection = db.collection('users');
-            const result = await collection.deleteOne({ _id: ObjectId(userId) });
+            const userObjectId = new ObjectId(userId);
+
+            const result = await collection.deleteOne({ _id: userObjectId });
             if (result.deletedCount === 1) {
                 res.json({ message: 'Usuario eliminado exitosamente' });
             } else {
@@ -107,12 +111,15 @@ class PiaApi {
 
     updateUserById = async (req, res) => {
         const userId = req.params.id;
+        const userObjectId = new ObjectId(userId);
+
         const { name, email, password } = req.body;
+
         try {
             const db = client.db();
             const collection = db.collection('users');
             const result = await collection.updateOne(
-                { _id: userId },
+            { _id: userObjectId }, 
                 { $set: { name, email, password } }
             );
             if (result.modifiedCount === 1) {
@@ -125,6 +132,19 @@ class PiaApi {
             res.status(500).json({ message: 'Error al actualizar usuario por ID' });
         }
     }; 
+
+
+    getSensorData = async (req, res) => {
+        try {
+            const db = client.db();
+            const collection = db.collection('sensorData');
+            const sensorData = await collection.find({}).toArray();
+            res.json({ sensorData });
+        } catch (error) {
+            console.error('Error al obtener lod datos del sensor:', error);
+            res.status(500).json({ message: 'Error al obtener lod datos del sensor' });
+        }
+    };
 
     startServer() {
         this.setupDB().then(() => {
