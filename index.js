@@ -132,8 +132,6 @@ class PiaApi {
             res.status(500).json({ message: 'Error al actualizar usuario por ID' });
         }
     }; 
-
-
     getSensorData = async (req, res) => {
         try {
             const db = client.db();
