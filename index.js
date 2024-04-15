@@ -134,7 +134,6 @@ class PiaApi {
         }
     };
 
-
     getSensorData = async (req, res) => {
         try {
             const db = client.db();
