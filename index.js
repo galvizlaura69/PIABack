@@ -1,7 +1,7 @@
 const express = require('express');
-const cors = require('cors'); 
-const { ObjectId } = require('mongodb'); 
-const { connectDB, client} = require('./config'); 
+const cors = require('cors');
+const { ObjectId } = require('mongodb');
+const { connectDB, client } = require('./config');
 class PiaApi {
     constructor() {
         this.app = express();
@@ -24,13 +24,14 @@ class PiaApi {
             origin: 'http://localhost:3000',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
-          }));
+        }));
         this.app.get('/users', (req, res) => this.getUsers(req, res));
         this.app.get('/users/:id', (req, res) => this.getUserById(req, res));
         this.app.post('/users', (req, res) => this.createUser(req, res));
         this.app.put('/users/:id', (req, res) => this.updateUserById(req, res));
         this.app.delete('/users/:id', (req, res) => this.deleteUserById(req, res));
         this.app.get('/sensorData', (req, res) => this.getSensorData(req, res));
+        this.app.post('/sensorData', (req, res) => this.createSensorData(req, res));
     }
 
     createUser = async (req, res) => {
@@ -71,7 +72,7 @@ class PiaApi {
         }
     };
 
-     getUserById = async (req, res) => {
+    getUserById = async (req, res) => {
         const userId = req.params.id;
         const userObjectId = new ObjectId(userId);
 
@@ -119,7 +120,7 @@ class PiaApi {
             const db = client.db();
             const collection = db.collection('users');
             const result = await collection.updateOne(
-            { _id: userObjectId }, 
+                { _id: userObjectId },
                 { $set: { name, email, password } }
             );
             if (result.modifiedCount === 1) {
@@ -131,7 +132,7 @@ class PiaApi {
             console.error('Error al actualizar usuario por ID:', error);
             res.status(500).json({ message: 'Error al actualizar usuario por ID' });
         }
-    }; 
+    };
 
 
     getSensorData = async (req, res) => {
@@ -145,6 +146,36 @@ class PiaApi {
             res.status(500).json({ message: 'Error al obtener lod datos del sensor' });
         }
     };
+
+    createSensorData = async (req, res) => {
+        const { co2Level } = req.body;
+        const currentDate = new Date();
+
+        try {
+            const db = client.db();
+            const collection = db.collection('sensorData');
+            const result = await collection.insertOne({
+                co2Level,
+                timestamp: currentDate
+            });
+
+            if (result && result.insertedId) {
+                const newSensorData = {
+                    _id: result.insertedId,
+                    co2Level,
+                    timestamp: currentDate
+                };
+                res.json({ message: 'Datos del sensor creados exitosamente', sensorData: newSensorData });
+            } else {
+                console.error('No se pudieron guardar los datos del sensor');
+                throw new Error('No se pudieron guardar los datos del sensor');
+            }
+        } catch (error) {
+            console.error('Error al guardar datos del sensor:', error);
+            res.status(500).json({ message: 'Error al guardar datos del sensor' });
+        }
+    };
+
 
     startServer() {
         this.setupDB().then(() => {
