@@ -148,8 +148,7 @@ class PiaApi {
 
     createSensorData = async (req, res) => {
         const { co2Level } = req.body;
-        const currentDate = new Date();
-
+        const currentDate = new Date().toLocaleString("en-US", {timeZone: "America/Bogota"});
         try {
             const db = client.db();
             const collection = db.collection('sensorData');
