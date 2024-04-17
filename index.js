@@ -41,146 +41,153 @@ class PiaApi {
         this.app.get('/sensorData', (req, res) => this.getSensorData(req, res)); // GET para obtener datos del sensor
         this.app.post('/sensorData', (req, res) => this.createSensorData(req, res)); // POST para crear datos del sensor
     }
-
     createUser = async (req, res) => {
-        const { name, email, password } = req.body;
+        // Método para crear un usuario
+        const { name, email, password } = req.body; // Obtiene los datos del cuerpo de la solicitud
         try {
-            const db = client.db();
-            const collection = db.collection('users');
-            const result = await collection.insertOne({
+            const db = client.db(); // Obtiene la instancia de la base de datos
+            const collection = db.collection('users'); // Obtiene la colección de usuarios
+            const result = await collection.insertOne({ // Inserta un nuevo usuario en la base de datos
                 name, email, password
             });
-            if (result && result.insertedId) {
+            if (result && result.insertedId) { // Verifica si se creó correctamente el usuario
                 const newUser = {
                     _id: result.insertedId,
                     name,
                     email,
                     password
                 };
-                res.json({ message: 'Usuario creado exitosamente', user: newUser });
+                res.json({ message: 'Usuario creado exitosamente', user: newUser }); // Respuesta exitosa
             } else {
-                console.error('No se pudo crear el usuario');
+                console.error('No se pudo crear el usuario'); // Error al crear el usuario
                 throw new Error('No se pudo crear el usuario');
             }
         } catch (error) {
-            console.error('Error al crear usuario:', error);
+            console.error('Error al crear usuario:', error); // Manejo de errores
             res.status(500).json({ message: 'Error al crear usuario' });
         }
     };
-
+    
     getUsers = async (req, res) => {
+        // Método para obtener todos los usuarios
         try {
-            const db = client.db();
-            const collection = db.collection('users');
-            const users = await collection.find({}).toArray();
-            res.json({ users });
+            const db = client.db(); // Obtiene la instancia de la base de datos
+            const collection = db.collection('users'); // Obtiene la colección de usuarios
+            const users = await collection.find({}).toArray(); // Obtiene todos los usuarios de la base de datos
+            res.json({ users }); // Devuelve la lista de usuarios
         } catch (error) {
-            console.error('Error al obtener usuarios:', error);
+            console.error('Error al obtener usuarios:', error); // Manejo de errores
             res.status(500).json({ message: 'Error al obtener usuarios' });
         }
     };
-
     getUserById = async (req, res) => {
-        const userId = req.params.id;
-        const userObjectId = new ObjectId(userId);
-
+        // Método para obtener un usuario por su ID
+        const userId = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL
+        const userObjectId = new ObjectId(userId); // Convierte el ID en un ObjectId de MongoDB
+    
         try {
-            const db = client.db();
-            const collection = db.collection('users');
-            const user = await collection.findOne({ _id: userObjectId });
+            const db = client.db(); // Obtiene la instancia de la base de datos
+            const collection = db.collection('users'); // Obtiene la colección de usuarios
+            const user = await collection.findOne({ _id: userObjectId }); // Busca el usuario por su ID en la base de datos
             if (!user) {
-                res.status(404).json({ message: 'Usuario no encontrado' });
+                res.status(404).json({ message: 'Usuario no encontrado' }); // Si no se encuentra el usuario, devuelve un error 404
             } else {
-                res.json({ user });
+                res.json({ user }); // Devuelve el usuario encontrado
             }
         } catch (error) {
-            console.error('Error al obtener usuario por ID:', error);
+            console.error('Error al obtener usuario por ID:', error); // Manejo de errores
             res.status(500).json({ message: 'Error al obtener usuario por ID' });
         }
     };
-
+    
     deleteUserById = async (req, res) => {
-        const userId = req.params.id;
+        // Método para eliminar un usuario por su ID
+        const userId = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL
         try {
-            const db = client.db();
-            const collection = db.collection('users');
-            const userObjectId = new ObjectId(userId);
-
-            const result = await collection.deleteOne({ _id: userObjectId });
+            const db = client.db(); // Obtiene la instancia de la base de datos
+            const collection = db.collection('users'); // Obtiene la colección de usuarios
+            const userObjectId = new ObjectId(userId); // Convierte el ID en un ObjectId de MongoDB
+    
+            const result = await collection.deleteOne({ _id: userObjectId }); // Elimina el usuario de la base de datos
             if (result.deletedCount === 1) {
-                res.json({ message: 'Usuario eliminado exitosamente' });
+                res.json({ message: 'Usuario eliminado exitosamente' }); // Respuesta exitosa
             } else {
-                res.status(404).json({ message: 'Usuario no encontrado' });
+                res.status(404).json({ message: 'Usuario no encontrado' }); // Si el usuario no se encuentra, devuelve un error 404
             }
         } catch (error) {
-            console.error('Error al eliminar usuario por ID:', error);
+            console.error('Error al eliminar usuario por ID:', error); // Manejo de errores
             res.status(500).json({ message: 'Error al eliminar usuario por ID' });
         }
     };
-
+    
     updateUserById = async (req, res) => {
-        const userId = req.params.id;
-        const userObjectId = new ObjectId(userId);
-
-        const { name, email, password } = req.body;
-
+        // Método para actualizar un usuario por su ID
+        const userId = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL
+        const userObjectId = new ObjectId(userId); // Convierte el ID en un ObjectId de MongoDB
+    
+        const { name, email, password } = req.body; // Obtiene los nuevos datos del usuario
+    
         try {
-            const db = client.db();
-            const collection = db.collection('users');
+            const db = client.db(); // Obtiene la instancia de la base de datos
+            const collection = db.collection('users'); // Obtiene la colección de usuarios
             const result = await collection.updateOne(
-                { _id: userObjectId },
-                { $set: { name, email, password } }
+                { _id: userObjectId }, // Filtra por el ID del usuario a actualizar
+                { $set: { name, email, password } } // Actualiza los datos del usuario
             );
             if (result.modifiedCount === 1) {
-                res.json({ message: 'Usuario actualizado exitosamente' });
+                res.json({ message: 'Usuario actualizado exitosamente' }); // Respuesta exitosa
             } else {
-                res.status(404).json({ message: 'Usuario no encontrado' });
+                res.status(404).json({ message: 'Usuario no encontrado' }); // Si el usuario no se encuentra, devuelve un error 404
             }
         } catch (error) {
-            console.error('Error al actualizar usuario por ID:', error);
+            console.error('Error al actualizar usuario por ID:', error); // Manejo de errores
             res.status(500).json({ message: 'Error al actualizar usuario por ID' });
         }
     };
-
+    
     getSensorData = async (req, res) => {
+        // Método para obtener datos del sensor
         try {
-            const db = client.db();
-            const collection = db.collection('sensorData');
-            const sensorData = await collection.find({}).toArray();
-            res.json({ sensorData });
+            const db = client.db(); // Obtiene la instancia de la base de datos
+            const collection = db.collection('sensorData'); // Obtiene la colección de datos del sensor
+            const sensorData = await collection.find({}).toArray(); // Obtiene todos los datos del sensor
+            res.json({ sensorData }); // Devuelve los datos del sensor
         } catch (error) {
-            console.error('Error al obtener lod datos del sensor:', error);
-            res.status(500).json({ message: 'Error al obtener lod datos del sensor' });
+            console.error('Error al obtener los datos del sensor:', error); // Manejo de errores
+            res.status(500).json({ message: 'Error al obtener los datos del sensor' });
         }
     };
-
+    
     createSensorData = async (req, res) => {
-        const { co2Level } = req.body;
-        const currentDate = new Date()
+        // Método para crear datos del sensor
+        const { co2Level } = req.body; // Obtiene el nivel de CO2 del cuerpo de la solicitud
+        const currentDate = new Date(); // Obtiene la fecha y hora actuales
+    
         try {
-            const db = client.db();
-            const collection = db.collection('sensorData');
+            const db = client.db(); // Obtiene la instancia de la base de datos
+            const collection = db.collection('sensorData'); // Obtiene la colección de datos del sensor
             const result = await collection.insertOne({
                 co2Level,
-                timestamp: currentDate
+                timestamp: currentDate // Agrega la marca de tiempo al dato del sensor
             });
-
+    
             if (result && result.insertedId) {
                 const newSensorData = {
                     _id: result.insertedId,
                     co2Level,
                     timestamp: currentDate
                 };
-                res.json({ message: 'Datos del sensor creados exitosamente', sensorData: newSensorData });
+                res.json({ message: 'Datos del sensor creados exitosamente', sensorData: newSensorData }); // Respuesta exitosa
             } else {
-                console.error('No se pudieron guardar los datos del sensor');
+                console.error('No se pudieron guardar los datos del sensor'); // Error al guardar los datos del sensor
                 throw new Error('No se pudieron guardar los datos del sensor');
             }
         } catch (error) {
-            console.error('Error al guardar datos del sensor:', error);
+            console.error('Error al guardar datos del sensor:', error); // Manejo de errores
             res.status(500).json({ message: 'Error al guardar datos del sensor' });
         }
     };
+    
 
 
     // Inicia el servidor después de conectar a la base de datos
