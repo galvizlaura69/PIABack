@@ -28,7 +28,7 @@ class PiaApi {
         // Configuración de middleware y rutas de la API
         this.app.use(express.json()); // Middleware para parsear JSON en las peticiones
         this.app.use(cors({
-            origin: '*',
+            origin: 'https://piafront-0bbdcf63fce6.herokuapp.com',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
         }));
