@@ -10,7 +10,7 @@ const { connectDB, client } = require('./config');
 class PiaApi {
     constructor() {
         this.app = express(); // Inicializa la aplicación Express
-        this.port = process.env.PORT || 3010;; // Puerto en el que se ejecutará el servidor
+        this.port = process.env.PORT || "http://localhost:3010"; // Puerto en el que se ejecutará el servidor
         this.setupRoutes(); // Configura las rutas de la API
     }
 
@@ -28,6 +28,7 @@ class PiaApi {
         // Configuración de middleware y rutas de la API
         this.app.use(express.json()); // Middleware para parsear JSON en las peticiones
         this.app.use(cors({
+            /* origin:'http://localhost:3000' */ //descomentar para correr en local
             origin: 'https://piafront-0bbdcf63fce6.herokuapp.com',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
