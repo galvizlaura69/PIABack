@@ -1,15 +1,21 @@
-const express = require('express');
-const cors = require('cors');
-const { ObjectId } = require('mongodb');
+// Importando librerías necesarias
+const express = require('express'); // Importa Express.js para crear el servidor
+const cors = require('cors'); // Importa CORS para permitir peticiones desde otros dominios
+const { ObjectId } = require('mongodb'); // Importa ObjectId de MongoDB para trabajar con IDs de documentos
+
+// Importa la función connectDB y el objeto client desde el archivo config.js para conectarse a MongoDB
 const { connectDB, client } = require('./config');
+
+// Definición de la clase PiaApi para manejar la API
 class PiaApi {
     constructor() {
-        this.app = express();
-        this.port = 3010;
-        this.setupRoutes();
+        this.app = express(); // Inicializa la aplicación Express
+        this.port = 3010; // Puerto en el que se ejecutará el servidor
+        this.setupRoutes(); // Configura las rutas de la API
     }
 
     async setupDB() {
+        // Conexión a la base de datos MongoDB
         try {
             await connectDB();
         } catch (error) {
@@ -19,19 +25,21 @@ class PiaApi {
     }
 
     setupRoutes() {
-        this.app.use(express.json());
+        // Configuración de middleware y rutas de la API
+        this.app.use(express.json()); // Middleware para parsear JSON en las peticiones
         this.app.use(cors({
             origin: 'http://localhost:3000',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
         }));
-        this.app.get('/users', (req, res) => this.getUsers(req, res));
-        this.app.get('/users/:id', (req, res) => this.getUserById(req, res));
-        this.app.post('/users', (req, res) => this.createUser(req, res));
-        this.app.put('/users/:id', (req, res) => this.updateUserById(req, res));
-        this.app.delete('/users/:id', (req, res) => this.deleteUserById(req, res));
-        this.app.get('/sensorData', (req, res) => this.getSensorData(req, res));
-        this.app.post('/sensorData', (req, res) => this.createSensorData(req, res));
+        // Definición de las rutas y métodos HTTP correspondientes
+        this.app.get('/users', (req, res) => this.getUsers(req, res)); // GET para obtener todos los usuarios
+        this.app.get('/users/:id', (req, res) => this.getUserById(req, res)); // GET para obtener un usuario por ID
+        this.app.post('/users', (req, res) => this.createUser(req, res)); // POST para crear un usuario
+        this.app.put('/users/:id', (req, res) => this.updateUserById(req, res)); // PUT para actualizar un usuario por ID
+        this.app.delete('/users/:id', (req, res) => this.deleteUserById(req, res)); // DELETE para eliminar un usuario por ID
+        this.app.get('/sensorData', (req, res) => this.getSensorData(req, res)); // GET para obtener datos del sensor
+        this.app.post('/sensorData', (req, res) => this.createSensorData(req, res)); // POST para crear datos del sensor
     }
 
     createUser = async (req, res) => {
@@ -148,7 +156,7 @@ class PiaApi {
 
     createSensorData = async (req, res) => {
         const { co2Level } = req.body;
-        const currentDate = new Date().toLocaleString("en-US", {timeZone: "America/Bogota"});
+        const currentDate = new Date()
         try {
             const db = client.db();
             const collection = db.collection('sensorData');
@@ -175,6 +183,7 @@ class PiaApi {
     };
 
 
+    // Inicia el servidor después de conectar a la base de datos
     startServer() {
         this.setupDB().then(() => {
             this.app.listen(this.port, () => {
@@ -186,5 +195,6 @@ class PiaApi {
     }
 }
 
+// Instancia de la clase PiaApi y arranque del servidor
 const PiaApiInstance = new PiaApi();
 PiaApiInstance.startServer();
