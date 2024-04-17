@@ -1,7 +1,7 @@
 const { MongoClient } = require('mongodb'); // Importa MongoClient de MongoDB
 
 // URI de conexión a la base de datos MongoDB Atlas
-const uri = 'mongodb+srv://0808javierramirez88:PIA_LordV@mydatabase.7kd0bu3.mongodb.net/?retryWrites=true&w=majority&appName=myDataBase';
+const uri = process.env.URLMONGO || 'mongodb+srv://0808javierramirez88:PIA_LordV@mydatabase.7kd0bu3.mongodb.net/?retryWrites=true&w=majority&appName=myDataBase';
 
 // Crea un nuevo cliente MongoClient con la URI y las opciones de configuración
 const client = new MongoClient(uri, { useUnifiedTopology: true });
