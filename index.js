@@ -161,21 +161,18 @@ class PiaApi {
     createSensorData = async (req, res) => {
         // Método para crear datos del sensor
         const { co2Level } = req.body; // Obtiene el nivel de CO2 del cuerpo de la solicitud
-        const currentDate = new Date(); // Obtiene la fecha y hora actuales
     
         try {
             const db = client.db(); // Obtiene la instancia de la base de datos
             const collection = db.collection('sensorData'); // Obtiene la colección de datos del sensor
             const result = await collection.insertOne({
                 co2Level,
-                timestamp: currentDate // Agrega la marca de tiempo al dato del sensor
             });
     
             if (result && result.insertedId) {
                 const newSensorData = {
                     _id: result.insertedId,
                     co2Level,
-                    timestamp: currentDate
                 };
                 res.json({ message: 'Datos del sensor creados exitosamente', sensorData: newSensorData }); // Respuesta exitosa
             } else {
