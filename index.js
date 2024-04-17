@@ -28,10 +28,11 @@ class PiaApi {
         // Configuración de middleware y rutas de la API
         this.app.use(express.json()); // Middleware para parsear JSON en las peticiones
         this.app.use(cors({
-            origin: 'http://localhost:3000',
+            origin: '*',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
         }));
+        ;
         // Definición de las rutas y métodos HTTP correspondientes
         this.app.get('/users', (req, res) => this.getUsers(req, res)); // GET para obtener todos los usuarios
         this.app.get('/users/:id', (req, res) => this.getUserById(req, res)); // GET para obtener un usuario por ID
