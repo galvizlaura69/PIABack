@@ -28,7 +28,7 @@ class PiaApi {
         // Configuración de middleware y rutas de la API
         this.app.use(express.json()); // Middleware para parsear JSON en las peticiones
         this.app.use(cors({
-            /* origin:'http://localhost:3000' */ //descomentar para correr en local
+             //origin:'http://localhost:3000',  //descomentar para correr en local
             origin: 'https://piafront-0bbdcf63fce6.herokuapp.com',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
@@ -167,14 +167,20 @@ class PiaApi {
         try {
             const db = client.db(); // Obtiene la instancia de la base de datos
             const collection = db.collection('sensorData'); // Obtiene la colección de datos del sensor
+    
+            // Obtener la fecha actual en formato ISO 8601
+            const currentDate = new Date().toISOString();
+    
             const result = await collection.insertOne({
                 co2Level,
+                createdAt: currentDate, // Agregar la fecha actual al documento
             });
     
             if (result && result.insertedId) {
                 const newSensorData = {
                     _id: result.insertedId,
                     co2Level,
+                    createdAt: currentDate, // Agregar la fecha actual al objeto de respuesta
                 };
                 res.json({ message: 'Datos del sensor creados exitosamente', sensorData: newSensorData }); // Respuesta exitosa
             } else {
@@ -186,6 +192,7 @@ class PiaApi {
             res.status(500).json({ message: 'Error al guardar datos del sensor' });
         }
     };
+    
     
 
 
