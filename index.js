@@ -2,7 +2,7 @@
 const express = require('express'); // Importa Express.js para crear el servidor
 const cors = require('cors'); // Importa CORS para permitir peticiones desde otros dominios
 const { ObjectId } = require('mongodb'); // Importa ObjectId de MongoDB para trabajar con IDs de documentos
-
+const fs = require('fs');
 // Importa la función connectDB y el objeto client desde el archivo config.js para conectarse a MongoDB
 const { connectDB, client } = require('./config');
 
@@ -28,7 +28,7 @@ class PiaApi {
         // Configuración de middleware y rutas de la API
         this.app.use(express.json()); // Middleware para parsear JSON en las peticiones
         this.app.use(cors({
-             //origin:'http://localhost:3000',  //descomentar para correr en local
+            //origin:'http://localhost:3000',  //descomentar para correr en local
             origin: 'https://piafront-0bbdcf63fce6.herokuapp.com',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
@@ -42,7 +42,18 @@ class PiaApi {
         this.app.delete('/users/:id', (req, res) => this.deleteUserById(req, res)); // DELETE para eliminar un usuario por ID
         this.app.get('/sensorData', (req, res) => this.getSensorData(req, res)); // GET para obtener datos del sensor
         this.app.post('/sensorData', (req, res) => this.createSensorData(req, res)); // POST para crear datos del sensor
+        this.app.get('/file', (req, res) => this.readFile(req, res));
     }
+    readFile(req, res) {
+        try {
+            const data = fs.readFileSync('Readme.txt', 'utf8');
+            res.status(200).send(data);
+        } catch (error) {
+            console.error('Error al leer el archivo:', error);
+            res.status(500).json({ message: 'Error al leer el archivo' });
+        }
+    }
+
     createUser = async (req, res) => {
         // Método para crear un usuario
         const { name, email, password } = req.body; // Obtiene los datos del cuerpo de la solicitud
@@ -69,7 +80,7 @@ class PiaApi {
             res.status(500).json({ message: 'Error al crear usuario' });
         }
     };
-    
+
     getUsers = async (req, res) => {
         // Método para obtener todos los usuarios
         try {
@@ -86,7 +97,7 @@ class PiaApi {
         // Método para obtener un usuario por su ID
         const userId = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL
         const userObjectId = new ObjectId(userId); // Convierte el ID en un ObjectId de MongoDB
-    
+
         try {
             const db = client.db(); // Obtiene la instancia de la base de datos
             const collection = db.collection('users'); // Obtiene la colección de usuarios
@@ -101,7 +112,7 @@ class PiaApi {
             res.status(500).json({ message: 'Error al obtener usuario por ID' });
         }
     };
-    
+
     deleteUserById = async (req, res) => {
         // Método para eliminar un usuario por su ID
         const userId = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL
@@ -109,7 +120,7 @@ class PiaApi {
             const db = client.db(); // Obtiene la instancia de la base de datos
             const collection = db.collection('users'); // Obtiene la colección de usuarios
             const userObjectId = new ObjectId(userId); // Convierte el ID en un ObjectId de MongoDB
-    
+
             const result = await collection.deleteOne({ _id: userObjectId }); // Elimina el usuario de la base de datos
             if (result.deletedCount === 1) {
                 res.json({ message: 'Usuario eliminado exitosamente' }); // Respuesta exitosa
@@ -121,14 +132,14 @@ class PiaApi {
             res.status(500).json({ message: 'Error al eliminar usuario por ID' });
         }
     };
-    
+
     updateUserById = async (req, res) => {
         // Método para actualizar un usuario por su ID
         const userId = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL
         const userObjectId = new ObjectId(userId); // Convierte el ID en un ObjectId de MongoDB
-    
+
         const { name, email, password } = req.body; // Obtiene los nuevos datos del usuario
-    
+
         try {
             const db = client.db(); // Obtiene la instancia de la base de datos
             const collection = db.collection('users'); // Obtiene la colección de usuarios
@@ -146,7 +157,7 @@ class PiaApi {
             res.status(500).json({ message: 'Error al actualizar usuario por ID' });
         }
     };
-    
+
     getSensorData = async (req, res) => {
         // Método para obtener datos del sensor
         try {
@@ -159,28 +170,24 @@ class PiaApi {
             res.status(500).json({ message: 'Error al obtener los datos del sensor' });
         }
     };
-    
+
     createSensorData = async (req, res) => {
         // Método para crear datos del sensor
         const { co2Level } = req.body; // Obtiene el nivel de CO2 del cuerpo de la solicitud
-    
+        const currentDate = new Date().toISOString();                    // Obtener la fecha actual en formato ISO 8601
         try {
             const db = client.db(); // Obtiene la instancia de la base de datos
-            const collection = db.collection('sensorData'); // Obtiene la colección de datos del sensor
-    
-            // Obtener la fecha actual en formato ISO 8601
-            const currentDate = new Date().toISOString();
-    
+            const collection = db.collection('sensorData'); // Obtiene la colección de datos del sensor    
             const result = await collection.insertOne({
                 co2Level,
-                createdAt: currentDate, // Agregar la fecha actual al documento
+                 createdAt: currentDate,  // Agregar la fecha actual al documento
             });
-    
+
             if (result && result.insertedId) {
                 const newSensorData = {
                     _id: result.insertedId,
                     co2Level,
-                    createdAt: currentDate, // Agregar la fecha actual al objeto de respuesta
+                     createdAt: currentDate, // Agregar la fecha actual al objeto de respuesta
                 };
                 res.json({ message: 'Datos del sensor creados exitosamente', sensorData: newSensorData }); // Respuesta exitosa
             } else {
@@ -192,8 +199,8 @@ class PiaApi {
             res.status(500).json({ message: 'Error al guardar datos del sensor' });
         }
     };
-    
-    
+
+
 
 
     // Inicia el servidor después de conectar a la base de datos

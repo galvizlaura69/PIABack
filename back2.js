@@ -2,7 +2,7 @@ const http = require('http'); // Importa el módulo HTTP de Node.js para crear e
 const url = require('url'); // Importa el módulo URL para manejar las URL de las solicitudes
 const fs = require('fs'); // Importa el módulo File System para manejar archivos
 const EventEmitter = require('events'); // Importa el módulo EventEmitter para gestionar eventos
-
+const { ObjectId } = require('mongodb'); // Importa el objeto ObjectId de MongoDB
 const { connectDB, client } = require('./config'); // Importa funciones de conexión a la base de datos
 
 class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de EventEmitter
@@ -57,6 +57,11 @@ class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de Ev
                     this.getSensorData(req, res); // Obtiene datos del sensor
                 } else if (req.method === 'POST') {
                     this.createSensorData(req, res); // Crea nuevos datos del sensor
+                }
+                break;
+            case '/file':
+                if (req.method === 'GET') {
+                    this.readFile(req, res); // Lee un archivo
                 }
                 break;
             default:
@@ -203,6 +208,19 @@ class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de Ev
             res.end(JSON.stringify({ message: 'Error al guardar datos del sensor' }));
         }
     }
+
+    async readFile(req, res) {
+        try {
+            const data = fs.readFileSync('path_to_your_file.txt', 'utf8');
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end(data);
+        } catch (error) {
+            console.error('Error al leer el archivo:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'Error al leer el archivo' }));
+        }
+    }
 }
+
 const PiaApiInstance = new PiaApi(); // Crea una instancia de la clase PiaApi
 PiaApiInstance.setupDB(); // Inicia la conexión a la base de datos

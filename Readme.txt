@@ -1,0 +1,5 @@
+- 1- Version de node.js 18.14.0
+- 2- git clone https://github.com/galvizlaura69/PIABack.git
+- 3- npm i (instalar)
+- 4- npm start (Correr el proyecto)
+- 5- La aplicacion corre en el puerta 3010
