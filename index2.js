@@ -4,6 +4,11 @@ const fs = require('fs'); // Importa el módulo File System para manejar archivo
 const EventEmitter = require('events'); // Importa el módulo EventEmitter para gestionar eventos
 const { ObjectId } = require('mongodb'); // Importa el objeto ObjectId de MongoDB
 const { connectDB, client } = require('./config'); // Importa funciones de conexión a la base de datos
+const cors = require('cors');
+const multer = require('multer');
+
+const upload = multer({ dest: 'uploads/' });
+
 
 class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de EventEmitter
     constructor() {
@@ -11,8 +16,40 @@ class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de Ev
         this.port = process.env.PORT || 3010; // Define el puerto del servidor
         this.server = http.createServer(this.handleRequest.bind(this)); // Crea el servidor HTTP
         this.setupRoutes(); // Configura las rutas del servidor
+        this.setupCors();
+        this.setupMulter();
     }
 
+    setupCors() {
+        this.server.on('request', (req, res) => {
+            // Permite las solicitudes de cualquier origen
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            // Configura los métodos HTTP permitidos
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+            // Configura los encabezados permitidos
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+            // Si la solicitud es de tipo OPTIONS, responde con éxito
+            if (req.method === 'OPTIONS') {
+                res.writeHead(200);
+                res.end();
+                return;
+            }
+        });
+    }
+    
+    setupMulter() {
+        const storage = multer.diskStorage({
+            destination: function (req, file, cb) {
+                cb(null, './uploads'); // Ruta donde se guardarán temporalmente los archivos
+            },
+            filename: function (req, file, cb) {
+                cb(null, 'general2.txt'); // Nombre del archivo
+            }
+        });
+    
+        this.upload = multer({ storage: storage }).single('file'); // Modificación aquí
+    }
     async setupDB() {
         try {
             await connectDB(); // Conecta a la base de datos
@@ -24,7 +61,7 @@ class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de Ev
     }
 
     setupRoutes() {
-        this.on('dbConnected', () => { // Escucha el evento 'dbConnected'
+        this.on('dbConnected', () => {
             this.server.listen(this.port, () => { // Inicia el servidor en el puerto especificado
                 console.log(`Servidor corriendo en http://localhost:${this.port}`);
             });
@@ -61,7 +98,9 @@ class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de Ev
                 break;
             case '/file':
                 if (req.method === 'GET') {
-                    this.readFile(req, res); // Lee un archivo
+                    this.readGeneralFile(req, res); 
+                }else if (req.method === 'POST') {
+                    this.uploadFile(req, res); 
                 }
                 break;
             default:
@@ -93,20 +132,21 @@ class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de Ev
             res.end(JSON.stringify({ message: 'Error al crear usuario' }));
         }
     }
-
-    async getUsers(req, res) {
-        try {
-            const db = client.db();
-            const collection = db.collection('users');
-            const users = await collection.find({}).toArray();
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ users }));
-        } catch (error) {
-            console.error('Error al obtener usuarios:', error);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ message: 'Error al obtener usuarios' }));
-        }
+async getUsers(req, res) {
+    try {
+        const db = client.db();
+        const collection = db.collection('users');
+        const users = await collection.find({}).toArray();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ users }));
+    } catch (error) {
+        console.error('Error al obtener usuarios:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ message: 'Error al obtener usuarios' }));
     }
+}
+
+    
 
     async getUserById(req, res) {
         const userId = req.params.id;
@@ -208,10 +248,23 @@ class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de Ev
             res.end(JSON.stringify({ message: 'Error al guardar datos del sensor' }));
         }
     }
-
-    async readFile(req, res) {
+    
+    async uploadFile(req, res) {
         try {
-            const data = fs.readFileSync('path_to_your_file.txt', 'utf8');
+            const fileData = req.body;
+            fs.appendFileSync('uploads/general2.txt', fileData + '\n');
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'Archivo subido exitosamente' }));
+        } catch (error) {
+            console.error('Error al subir archivo:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'Error al subir archivo' }));
+        }
+    }
+
+    async readGeneralFile(req, res) {
+        try {
+            const data = fs.readFileSync('uploads/general2.txt', 'utf8');
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end(data);
         } catch (error) {
@@ -219,7 +272,7 @@ class PiaApi extends EventEmitter { // Define la clase PiaApi que extiende de Ev
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ message: 'Error al leer el archivo' }));
         }
-    }
+    } 
 }
 
 const PiaApiInstance = new PiaApi(); // Crea una instancia de la clase PiaApi
