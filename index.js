@@ -5,6 +5,9 @@ const { ObjectId } = require('mongodb'); // Importa ObjectId de MongoDB para tra
 const fs = require('fs');
 // Importa la función connectDB y el objeto client desde el archivo config.js para conectarse a MongoDB
 const { connectDB, client } = require('./config');
+const multer = require('multer');
+
+
 
 // Definición de la clase PiaApi para manejar la API
 class PiaApi {
@@ -12,6 +15,7 @@ class PiaApi {
         this.app = express(); // Inicializa la aplicación Express
         this.port = process.env.PORT || 3010; // Puerto en el que se ejecutará el servidor
         this.setupRoutes(); // Configura las rutas de la API
+        this.setupMulter(); // Configura multer para la subida de archivos
     }
 
     async setupDB() {
@@ -24,6 +28,19 @@ class PiaApi {
         }
     }
 
+    setupMulter() {
+        const storage = multer.diskStorage({
+            destination: function (req, file, cb) {
+                cb(null, './uploads'); // Ruta donde se guardarán temporalmente los archivos
+            },
+            filename: function (req, file, cb) {
+                cb(null, 'general.txt'); // Nombre del archivo
+            }
+        });
+    
+        this.upload = multer({ storage: storage }).single('file'); // Modificación aquí
+    }
+    
     setupRoutes() {
         // Configuración de middleware y rutas de la API
         this.app.use(express.json()); // Middleware para parsear JSON en las peticiones
@@ -42,17 +59,50 @@ class PiaApi {
         this.app.delete('/users/:id', (req, res) => this.deleteUserById(req, res)); // DELETE para eliminar un usuario por ID
         this.app.get('/sensorData', (req, res) => this.getSensorData(req, res)); // GET para obtener datos del sensor
         this.app.post('/sensorData', (req, res) => this.createSensorData(req, res)); // POST para crear datos del sensor
-        this.app.get('/file', (req, res) => this.readFile(req, res));
+        this.app.get('/file', (req, res) => this.readFile(req, res)); //get para ller archivos
+        this.app.post('/file', (req, res) => this.upload(req, res, (err) => {
+            if (err) {
+                console.error('Error al subir archivo:', err);
+                res.status(500).json({ message: 'Error al subir archivo' });
+                return;
+            }
+            this.uploadFile(req, res);
+        }));
     }
+
+    //Servicios para usar el fs de node.js
     readFile(req, res) {
         try {
-            const data = fs.readFileSync('Readme.txt', 'utf8');
+            const data = fs.readFileSync('uploads/general.txt', 'utf8');
             res.status(200).send(data);
         } catch (error) {
             console.error('Error al leer el archivo:', error);
             res.status(500).json({ message: 'Error al leer el archivo' });
         }
     }
+    uploadFile(req, res) {
+        try {
+            const file = req.file; // Archivo subido
+            if (!file) {
+                res.status(400).json({ message: 'No se ha enviado ningún archivo' });
+                return;
+            }
+    
+            const filePath = file.path; // Ruta del archivo en el servidor
+            const fileData = fs.readFileSync(filePath, 'utf8'); // Lee el contenido del archivo
+    
+            const existingFilePath = 'uploads/general.txt'; // Ruta del archivo existente
+            fs.appendFileSync(existingFilePath, fileData); // Agrega el contenido del archivo subido al archivo existente
+    
+            // Envía una respuesta exitosa
+            res.status(200).json({ message: 'Contenido del archivo subido agregado al archivo existente' });
+        } catch (error) {
+            console.error('Error al subir archivo:', error);
+            res.status(500).json({ message: 'Error al subir archivo' });
+        }
+    }
+    
+    
 
     createUser = async (req, res) => {
         // Método para crear un usuario
