@@ -1,4 +1,3 @@
-// Importando librerías necesarias
 const express = require('express'); // Importa Express.js para crear el servidor
 const cors = require('cors'); // Importa CORS para permitir peticiones desde otros dominios
 const { ObjectId } = require('mongodb'); // Importa ObjectId de MongoDB para trabajar con IDs de documentos
@@ -6,7 +5,6 @@ const fs = require('fs');
 // Importa la función connectDB y el objeto client desde el archivo config.js para conectarse a MongoDB
 const { connectDB, client } = require('./config');
 const multer = require('multer');
-
 
 
 // Definición de la clase PiaApi para manejar la API
@@ -45,8 +43,8 @@ class PiaApi {
         // Configuración de middleware y rutas de la API
         this.app.use(express.json()); // Middleware para parsear JSON en las peticiones
         this.app.use(cors({
-            //origin:'http://localhost:3000',  //descomentar para correr en local
-            origin: 'https://piafront-0bbdcf63fce6.herokuapp.com',
+            origin:'http://localhost:3000',  //descomentar para correr en local
+            //origin: 'https://piafront-0bbdcf63fce6.herokuapp.com',
             methods: ['GET', 'POST', 'PUT', 'DELETE'],
             allowedHeaders: ['Content-Type', 'Authorization'],
         }));
@@ -101,9 +99,7 @@ class PiaApi {
             res.status(500).json({ message: 'Error al subir archivo' });
         }
     }
-    
-    
-
+    //Servicios de usuario
     createUser = async (req, res) => {
         // Método para crear un usuario
         const { name, email, password } = req.body; // Obtiene los datos del cuerpo de la solicitud
@@ -130,7 +126,6 @@ class PiaApi {
             res.status(500).json({ message: 'Error al crear usuario' });
         }
     };
-
     getUsers = async (req, res) => {
         // Método para obtener todos los usuarios
         try {
@@ -162,7 +157,6 @@ class PiaApi {
             res.status(500).json({ message: 'Error al obtener usuario por ID' });
         }
     };
-
     deleteUserById = async (req, res) => {
         // Método para eliminar un usuario por su ID
         const userId = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL
@@ -182,7 +176,6 @@ class PiaApi {
             res.status(500).json({ message: 'Error al eliminar usuario por ID' });
         }
     };
-
     updateUserById = async (req, res) => {
         // Método para actualizar un usuario por su ID
         const userId = req.params.id; // Obtiene el ID del usuario de los parámetros de la URL
@@ -207,20 +200,22 @@ class PiaApi {
             res.status(500).json({ message: 'Error al actualizar usuario por ID' });
         }
     };
-
+    //Servicios de sensor
     getSensorData = async (req, res) => {
-        // Método para obtener datos del sensor
         try {
+            const { page = 1, pageNumber = 5 } = req.query; // Obtiene los parámetros de paginación de los query parameters
+            const skip = (page - 1) * pageNumber; // Calcula el número de documentos a omitir
             const db = client.db(); // Obtiene la instancia de la base de datos
             const collection = db.collection('sensorData'); // Obtiene la colección de datos del sensor
-            const sensorData = await collection.find({}).toArray(); // Obtiene todos los datos del sensor
-            res.json({ sensorData }); // Devuelve los datos del sensor
+            const sensorData = await collection.find({}).skip(skip).limit(Number(pageNumber)).toArray(); // Realiza la consulta con paginación
+            res.json({ sensorData }); // Devuelve los datos del sensor paginados
         } catch (error) {
             console.error('Error al obtener los datos del sensor:', error); // Manejo de errores
             res.status(500).json({ message: 'Error al obtener los datos del sensor' });
         }
     };
-
+    
+    
     createSensorData = async (req, res) => {
         // Método para crear datos del sensor
         const { co2Level } = req.body; // Obtiene el nivel de CO2 del cuerpo de la solicitud
@@ -249,9 +244,6 @@ class PiaApi {
             res.status(500).json({ message: 'Error al guardar datos del sensor' });
         }
     };
-
-
-
 
     // Inicia el servidor después de conectar a la base de datos
     startServer() {
