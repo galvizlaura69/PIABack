@@ -56,6 +56,7 @@ class PiaApi {
         this.app.put('/users/:id', (req, res) => this.updateUserById(req, res)); // PUT para actualizar un usuario por ID
         this.app.delete('/users/:id', (req, res) => this.deleteUserById(req, res)); // DELETE para eliminar un usuario por ID
         this.app.get('/sensorData', (req, res) => this.getSensorData(req, res)); // GET para obtener datos del sensor
+        this.app.get('/sensorDataFull', (req, res) => this.getSensorDataByDate (req, res)); // GET para obtener datos del sensor
         this.app.post('/sensorData', (req, res) => this.createSensorData(req, res)); // POST para crear datos del sensor
         this.app.get('/file', (req, res) => this.readFile(req, res)); //get para ller archivos
         this.app.post('/file', (req, res) => this.upload(req, res, (err) => {
@@ -214,25 +215,42 @@ class PiaApi {
             res.status(500).json({ message: 'Error al obtener los datos del sensor' });
         }
     };
-    
-    
+    getSensorDataByDate = async (req, res) => {
+        try {
+            const { date } = req.query;
+            const db = client.db();
+            const collection = db.collection('sensorData');
+            const sensorData = await collection.find({ createdAt: { $regex: `^${date}` } }).toArray();
+            res.json({ sensorData });
+        } catch (error) {
+            console.error('Error al obtener los datos del sensor:', error);
+            res.status(500).json({ message: 'Error al obtener los datos del sensor' });
+        }
+    };
     createSensorData = async (req, res) => {
         // Método para crear datos del sensor
         const { co2Level } = req.body; // Obtiene el nivel de CO2 del cuerpo de la solicitud
-        const currentDate = new Date().toISOString();                    // Obtener la fecha actual en formato ISO 8601
+        
+        // Obtener la fecha actual en el huso horario de Bogotá
+        const currentDate = new Date();
+        currentDate.setHours(currentDate.getHours() - 5); // Bogotá está 5 horas detrás de UTC
+    
+        // Formatear la fecha en el formato deseado
+        const formattedDate = currentDate.toISOString().replace(/T/, ' ').replace(/\..+/, ''); // Eliminar la parte de la fracción de segundos
+        
         try {
             const db = client.db(); // Obtiene la instancia de la base de datos
             const collection = db.collection('sensorData'); // Obtiene la colección de datos del sensor    
             const result = await collection.insertOne({
                 co2Level,
-                 createdAt: currentDate,  // Agregar la fecha actual al documento
+                createdAt: formattedDate,  // Agregar la fecha actual al documento
             });
-
+    
             if (result && result.insertedId) {
                 const newSensorData = {
                     _id: result.insertedId,
                     co2Level,
-                     createdAt: currentDate, // Agregar la fecha actual al objeto de respuesta
+                    createdAt: formattedDate, // Agregar la fecha actual al objeto de respuesta
                 };
                 res.json({ message: 'Datos del sensor creados exitosamente', sensorData: newSensorData }); // Respuesta exitosa
             } else {
@@ -244,6 +262,7 @@ class PiaApi {
             res.status(500).json({ message: 'Error al guardar datos del sensor' });
         }
     };
+    
 
     // Inicia el servidor después de conectar a la base de datos
     startServer() {
