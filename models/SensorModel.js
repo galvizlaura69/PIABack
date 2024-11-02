@@ -4,6 +4,8 @@ const { client } = require('../config');
 class SensorModel {
     constructor() {
         this.collection = client.db().collection('sensorData');
+        this.counter = 0; 
+        this.co2Sum = 0;  
     }
 
     async getSensorData(page = 1, pageNumber = 5) {
@@ -16,15 +18,23 @@ class SensorModel {
     }
 
     async createSensorData({ co2Level }) {
+        this.counter++;
+        this.co2Sum += co2Level;
+
+        if (this.counter < 180) {
+            return;
+        }
+        const co2Average = this.co2Sum / this.counter;
         const currentDate = new Date();
         currentDate.setHours(currentDate.getHours() - 5);
         const formattedDate = currentDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+        const result = await this.collection.insertOne({ co2Level: co2Average, createdAt: formattedDate });
 
-        const result = await this.collection.insertOne({ co2Level, createdAt: formattedDate });
         if (result.insertedId) {
-            return { _id: result.insertedId, co2Level, createdAt: formattedDate };
+            this.counter = 0;
+            this.co2Sum = 0;
+            return { _id: result.insertedId, co2Level: co2Average, createdAt: formattedDate };
         }
-        throw new Error('No se pudieron guardar los datos del sensor');
     }
 }
 

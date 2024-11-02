@@ -3,7 +3,7 @@ const { MongoClient } = require('mongodb');
 const uri = process.env.URLMONGO ||
     'mongodb+srv://0808javierramirez88:PIA_LordV@mydatabase.dyngf.mongodb.net/?retryWrites=true&w=majority&appName=myDataBase';
 
-    const client = new MongoClient(uri, { serverSelectionTimeoutMS: 5000 });
+    const client = new MongoClient(uri);
 
 async function connectDB() {
     try {
