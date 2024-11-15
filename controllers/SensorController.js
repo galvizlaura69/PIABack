@@ -14,13 +14,15 @@ class SensorController {
 
     async getSensorDataByDate(req, res) {
         try {
-            const sensorData = await SensorModel.getSensorDataByDate(req.query.date);
+            const { date, level } = req.query; 
+            const sensorData = await SensorModel.getSensorDataByDate(date, level);
             res.json({ sensorData });
         } catch (error) {
             console.error('Error al obtener los datos del sensor:', error);
             res.status(500).json({ message: 'Error al obtener los datos del sensor' });
         }
     }
+    
 
     async createSensorData(req, res) {
         try {
