@@ -39,15 +39,15 @@ class SensorModel {
         this.dataBuffer.push(co2Level);
         this.dataCounter++;
 
-        if (this.dataCounter >= 2) {
+        if (this.dataCounter >= 5) {
             const averageCo2Level = this.dataBuffer.reduce((sum, level) => sum + level, 0) / this.dataBuffer.length;
 
             let averageLevel = '';
-            if (averageCo2Level >= 0 && averageCo2Level <= 200) {
+            if (averageCo2Level >= 0 && averageCo2Level <= 400) {
                 averageLevel = 'bajo';
-            } else if (averageCo2Level > 300 && averageCo2Level <= 700) {
+            } else if (averageCo2Level > 401 && averageCo2Level <= 700) {
                 averageLevel = 'medio';
-            } else if (averageCo2Level > 700) {
+            } else if (averageCo2Level => 701) {
                 averageLevel = 'alto';
             }
             const result = await this.collection.insertOne({
